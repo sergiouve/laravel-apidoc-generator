@@ -263,6 +263,21 @@ class GenerateDocumentationTest extends TestCase
     }
 
     /** @test */
+    public function generated_openapi_specs_file_is_correct()
+    {
+        RouteFacade::get('/api/test', TestController::class.'@withEndpointDescription');
+        RouteFacade::post('/api/responseTag', TestController::class.'@withResponseTag');
+
+        config(['apidoc.routes.0.match.prefixes' => ['api/*']]);
+        $this->artisan('apidoc:generate');
+
+        $generatedCollection = json_decode(file_get_contents(__DIR__.'/../public/docs/openapi.json'));
+        $fixtureCollection = json_decode(file_get_contents(__DIR__.'/Fixtures/openapi.json'));
+
+        $this->assertEquals($generatedCollection, $fixtureCollection);
+    }
+
+    /** @test */
     public function can_append_custom_http_headers()
     {
         RouteFacade::get('/api/headers', TestController::class.'@checkCustomHeaders');
