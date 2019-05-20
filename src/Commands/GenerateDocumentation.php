@@ -185,8 +185,9 @@ class GenerateDocumentation extends Command
 
         if ($this->shouldGenerateOpenApiDocument()) {
             $this->info('Generating OpenAPI document');
+            $content = $this->generateOpenApiDocument($parsedRoutes);
 
-            file_put_contents($outputPath.DIRECTORY_SEPARATOR.'openapi.yaml', $this->generateOpenApiDocument($parsedRoutes));
+            file_put_contents($outputPath.DIRECTORY_SEPARATOR.'openapi.yaml', $content);
         }
 
         if ($logo = config('apidoc.logo')) {
@@ -308,5 +309,4 @@ class GenerateDocumentation extends Command
     {
         return config('apidoc.openapi.enabled', is_bool(config('apidoc.openapi')) ? config('apidoc.openapi') : false);
     }
-
 }

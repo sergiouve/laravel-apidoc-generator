@@ -266,13 +266,13 @@ class GenerateDocumentationTest extends TestCase
     public function generated_openapi_specs_file_is_correct()
     {
         Config::set('apidoc.openapi.enabled', true);
-        RouteFacade::get('/api/test', TestController::class.'@withEndpointDescription');
-        RouteFacade::post('/api/responseTag', TestController::class.'@withResponseTag');
+        RouteFacade::get('/api/resource', TestController::class.'@withEndpointDescription');
+        RouteFacade::post('/api/resource', TestController::class.'@withResponseTag');
 
         config(['apidoc.routes.0.match.prefixes' => ['api/*']]);
         $this->artisan('apidoc:generate');
 
-        // $generatedCollection = file_get_contents(__DIR__.'/../public/docs/openapi.yaml');
+        $generatedDocument = file_get_contents(__DIR__.'/../public/docs/openapi.yaml');
         // $fixtureCollection = file_get_contents(__DIR__.'/Fixtures/openapi.yaml');
 
         $generatedFile = __DIR__.'/../public/docs/openapi.yaml';
