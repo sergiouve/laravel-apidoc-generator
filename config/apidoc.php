@@ -34,6 +34,21 @@ return [
     ],
 
     /*
+     * Generate a OpenAPI document in addition to HTML docs.
+     */
+    'openapi' => [
+        /*
+         * Specify whether the OpenAPI document should be generated.
+         */
+        'enabled' => false,
+
+        /*
+         * The name for the exported Postman collection. Default: config('app.name')." API"
+         */
+        'name' => null,
+    ],
+
+    /*
      * The routes for which documentation should be generated.
      * Each group contains rules defining which routes should be included ('match', 'include' and 'exclude' sections)
      * and rules which should be applied to them ('apply' section).

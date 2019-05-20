@@ -13,6 +13,7 @@ use Mpociot\ApiDoc\Tools\Generator;
 use Mpociot\ApiDoc\Tools\RouteMatcher;
 use Mpociot\Documentarian\Documentarian;
 use Mpociot\ApiDoc\Postman\CollectionWriter;
+use Mpociot\ApiDoc\OpenAPI\OpenAPIWriter;
 
 class GenerateDocumentation extends Command
 {
@@ -182,6 +183,12 @@ class GenerateDocumentation extends Command
             file_put_contents($outputPath.DIRECTORY_SEPARATOR.'collection.json', $this->generatePostmanCollection($parsedRoutes));
         }
 
+        if ($this->shouldGenerateOpenApiDocument()) {
+            $this->info('Generating OpenAPI document');
+
+            file_put_contents($outputPath.DIRECTORY_SEPARATOR.'openapi.yaml', $this->generateOpenApiDocument($parsedRoutes));
+        }
+
         if ($logo = config('apidoc.logo')) {
             copy(
                 $logo,
@@ -277,4 +284,29 @@ class GenerateDocumentation extends Command
     {
         return config('apidoc.postman.enabled', is_bool(config('apidoc.postman')) ? config('apidoc.postman') : false);
     }
+
+    /**
+     * Generate OpenAPI document YAML file.
+     *
+     * @param Collection $routes
+     *
+     * @return string
+     */
+    private function generateOpenAPIDocument(Collection $routes)
+    {
+        $writer = new OpenAPIWriter($routes);
+
+        return $writer->getDocument();
+    }
+
+    /**
+     * Checks config if it should generate OpenAPI document.
+     *
+     * @return bool
+     */
+    private function shouldGenerateOpenApiDocument()
+    {
+        return config('apidoc.openapi.enabled', is_bool(config('apidoc.openapi')) ? config('apidoc.openapi') : false);
+    }
+
 }
