@@ -17,14 +17,14 @@ class OpenAPIWriter
     public function getDocument()
     {
         $skeleton = $this->getBaseYAML();
-        $tags = $this->getRoutesGroups();
 
-        $skeleton['tags'] = $this->getRoutesGroups();
-        $skeleton['paths'] = $this->getRoutesPaths();
+        $tags = $this->getTags();
+        $paths = $this->hydratePaths($this->getPaths());
+
+        $skeleton['tags'] = $tags;
+        $skeleton['paths'] = $paths;
 
         $yaml = Yaml::dump($skeleton);
-
-        dd($yaml);
 
         return $yaml;
     }
@@ -34,51 +34,78 @@ class OpenAPIWriter
         return [
             'openapi' => '3.0.0',
             'info'    => [
-                'title' => 'My OpenAPI 3.0.0 document',
+                'title'   => 'My OpenAPI 3.0.0 document',
                 'version' => '1.0'
             ],
-            'paths' => []
+            'contact' => [
+                'example@domain.com',
+            ],
+            'license' => [
+                'name' => 'Apache 2.0',
+                'url' => 'http://www.apache.org/licenses/LICENSE-2.0.html',
+            ],
+            'tags'        => [],
+            'paths'       => [],
+            'definitions' => [],
         ];
     }
 
-    private function getRoutesGroups()
+    private function getBasePath()
     {
-        return array_keys($this->routes->map(function ($route, $group) {
-            return $group;
-        })->toArray());
+        return [
+            '{{routePath}}' => [
+                'operationId' => '',
+                'summary'     => '',
+                'responses'   => [],
+            ],
+        ];
     }
 
-    /*
-     * TODO: define entry skeleton and each of them
-     * with single methods.
-     */
-    private function getRoutesPaths()
+    private function getBaseResponse()
     {
-        $routes = [];
+        return [
+            '{{httpCode}}' => [
+                'description' => '',
+                'content' => '',
+            ],
+        ];
+    }
 
-        $this->routes->each(function ($group) use (&$routes) {
-            $group->each(function ($route) use (&$routes) {
-                foreach ($route['methods'] as $method) {
-                    $operationId = 'operationId';
-                    $summary = 'summary';
-                    $uri = [
-                        'responses' => [
-                            '200' => [
-                                'description' => 'wubba'
-                            ],
-                        ],
-                    ];
+    private function getTags()
+    {
+        return $this->routes->map(function ($route) {
+            return [
+                'name'        => $route['group'],
+                'description' => $route['description'],
+            ];
+        })->unique('name')->toArray();
+    }
 
-                    isset($routes[$route['uri']]) ?: $routes[$route['uri']] = [];
+    private function getPaths()
+    {
+        return $this->routes->map(function ($route) {
+            return $route['uri'];
+        })->unique();
+    }
 
-                    $routes[$route['uri']][$method] = [
-                        'operationId' => $operationId,
-                        'summary' => $summary,
-                    ];
-                }
-            });
+    private function hydratePaths(Collection $paths)
+    {
+        return $paths->map(function ($path) {
+            $methods = $this->getPathMethods($path);
+            return [
+                $path => [
+                    $methods[0] => []
+                ]
+            ];
+        })->toArray();
+    }
+
+    private function getPathMethods(String $path)
+    {
+        return $this->routes->filter(function ($route) use ($path) {
+            return $route['uri'] === $path;
+        })->map(function ($route) {
+            return strtolower($route['methods'][0]);
         });
-
-        return $routes;
     }
 }

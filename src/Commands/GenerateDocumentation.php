@@ -58,13 +58,21 @@ class GenerateDocumentation extends Command
 
         $generator = new Generator(config('apidoc.faker_seed'));
         $parsedRoutes = $this->processRoutes($generator, $routes);
-        $parsedRoutes = collect($parsedRoutes)->groupBy('group')
+        $groupedRoutes = collect($parsedRoutes)->groupBy('group')
             ->sortBy(static function ($group) {
                 /* @var $group Collection */
                 return $group->first()['group'];
             }, SORT_NATURAL);
 
-        $this->writeMarkdown($parsedRoutes);
+        $this->writeMarkdown($groupedRoutes);
+
+        if ($this->shouldGenerateOpenApiDocument()) {
+            $this->info('Generating OpenAPI document');
+            $routes = collect($parsedRoutes);
+            $content = $this->generateOpenApiDocument($routes);
+
+            file_put_contents($outputPath.DIRECTORY_SEPARATOR.'openapi.yaml', $content);
+        }
     }
 
     /**
@@ -181,13 +189,6 @@ class GenerateDocumentation extends Command
             $this->info('Generating Postman collection');
 
             file_put_contents($outputPath.DIRECTORY_SEPARATOR.'collection.json', $this->generatePostmanCollection($parsedRoutes));
-        }
-
-        if ($this->shouldGenerateOpenApiDocument()) {
-            $this->info('Generating OpenAPI document');
-            $content = $this->generateOpenApiDocument($parsedRoutes);
-
-            file_put_contents($outputPath.DIRECTORY_SEPARATOR.'openapi.yaml', $content);
         }
 
         if ($logo = config('apidoc.logo')) {
