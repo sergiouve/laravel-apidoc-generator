@@ -16,17 +16,12 @@ class OpenAPIWriter
         $this->routes = $routes;
     }
 
-    public function getDocument()
+    public function generate()
     {
         $skeleton = $this->getBaseYAML();
-
-        $tags = $this->getTags();
-        $paths = $this->hydratePaths($this->getPaths());
-
-        $skeleton['tags'] = $tags;
-        $skeleton['paths'] = $paths;
-
-        $yaml = Yaml::dump($skeleton, self::YAML_INLINE_LEVEL);
+        $document = $this->hydrateSkeleton($skeleton);
+        $yaml = Yaml::dump($document, self::YAML_INLINE_LEVEL);
+        dd($document, $yaml);
 
         return $yaml;
     }
@@ -52,21 +47,32 @@ class OpenAPIWriter
         ];
     }
 
+    private function hydrateSkeleton(array $skeleton)
+    {
+        $tags = $this->getTags();
+        $paths = $this->hydratePaths($this->getPaths());
+
+        $skeleton['tags'] = $tags;
+        $skeleton['paths'] = $paths;
+
+        return $skeleton;
+    }
+
     private function getBasePath()
     {
         return [
-            '{{routePath}}' => [
-                'operationId' => '',
-                'summary'     => '',
-                'responses'   => [],
+            'operationId' => '',
+            'summary'     => '',
+            'responses'   => [
+                $this->getBaseResponse('200'),
             ],
         ];
     }
 
-    private function getBaseResponse()
+    private function getBaseResponse(String $httpCode)
     {
         return [
-            '{{httpCode}}' => [
+            $httpCode => [
                 'description' => '',
                 'content' => '',
             ],
@@ -104,11 +110,7 @@ class OpenAPIWriter
         })->map(function ($route) {
             return strtolower($route['methods'][0]);
         })->reduce(function ($methods, $method) {
-            return $methods->put($method, [
-                'operationId' => '',
-                'summary'     => '',
-                'responses'   => [],
-            ]);
+            return $methods->put($method, $this->getBasePath());
         }, new Collection());
     }
 }

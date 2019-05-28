@@ -300,7 +300,7 @@ class GenerateDocumentation extends Command
     {
         $writer = new OpenAPIWriter($routes);
 
-        return $writer->getDocument();
+        return $writer->generate();
     }
 
     /**
