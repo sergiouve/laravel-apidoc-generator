@@ -68,6 +68,8 @@ class GenerateDocumentation extends Command
 
         if ($this->shouldGenerateOpenApiDocument()) {
             $this->info('Generating OpenAPI document');
+
+            $outputPath = config('apidoc.output');
             $routes = collect($parsedRoutes);
             $content = $this->generateOpenApiDocument($routes);
 

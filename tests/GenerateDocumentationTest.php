@@ -266,8 +266,16 @@ class GenerateDocumentationTest extends TestCase
     public function generated_openapi_specs_file_is_correct()
     {
         Config::set('apidoc.openapi.enabled', true);
-        RouteFacade::get('/api/resource', TestController::class.'@withEndpointDescription');
-        RouteFacade::post('/api/resource', TestController::class.'@withResponseTag');
+
+        RouteFacade::get('/api/users', TestController::class.'@withEndpointDescription');
+        RouteFacade::post('/api/users', TestController::class.'@withResponseTag');
+        RouteFacade::put('/api/users/{user}', TestController::class.'@withResponseTag');
+        RouteFacade::delete('/api/users/{user}', TestController::class.'@withResponseTag');
+
+        RouteFacade::get('/api/posts', TestController::class.'@withEndpointDescription');
+        RouteFacade::post('/api/posts', TestController::class.'@withResponseTag');
+        RouteFacade::put('/api/posts/{post}', TestController::class.'@withResponseTag');
+        RouteFacade::delete('/api/posts/{post}', TestController::class.'@withResponseTag');
 
         config(['apidoc.routes.0.match.prefixes' => ['api/*']]);
         $this->artisan('apidoc:generate');

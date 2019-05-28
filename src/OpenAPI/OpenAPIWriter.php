@@ -24,7 +24,7 @@ class OpenAPIWriter
         $skeleton['tags'] = $tags;
         $skeleton['paths'] = $paths;
 
-        $yaml = Yaml::dump($skeleton);
+        $yaml = Yaml::dump($skeleton, 16);
 
         return $yaml;
     }
@@ -90,14 +90,9 @@ class OpenAPIWriter
 
     private function hydratePaths(Collection $paths)
     {
-        return $paths->map(function ($path) {
-            $methods = $this->getPathMethods($path);
-            return [
-                $path => [
-                    $methods[0] => []
-                ]
-            ];
-        })->toArray();
+        return $paths->reduce(function ($hydrated, $path) {
+            return $hydrated->put($path, $this->getPathMethods($path));
+        }, new Collection())->toArray();
     }
 
     private function getPathMethods(String $path)
@@ -106,6 +101,12 @@ class OpenAPIWriter
             return $route['uri'] === $path;
         })->map(function ($route) {
             return strtolower($route['methods'][0]);
-        });
+        })->reduce(function ($methods, $method) {
+            return $methods->put($method, [
+                'operationId' => '',
+                'summary'     => '',
+                'responses'   => [],
+            ]);
+        }, new Collection());
     }
 }
