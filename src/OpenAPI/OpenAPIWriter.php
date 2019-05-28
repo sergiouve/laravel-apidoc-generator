@@ -7,6 +7,8 @@ use Symfony\Component\Yaml\Yaml;
 
 class OpenAPIWriter
 {
+    const YAML_INLINE_LEVEL = 16;
+
     protected $routes;
 
     public function __construct(Collection $routes)
@@ -24,7 +26,7 @@ class OpenAPIWriter
         $skeleton['tags'] = $tags;
         $skeleton['paths'] = $paths;
 
-        $yaml = Yaml::dump($skeleton, 16);
+        $yaml = Yaml::dump($skeleton, self::YAML_INLINE_LEVEL);
 
         return $yaml;
     }
