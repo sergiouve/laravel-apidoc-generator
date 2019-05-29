@@ -21,7 +21,8 @@ class OpenAPIWriter
         $skeleton = $this->getBaseYAML();
         $document = $this->hydrateSkeleton($skeleton);
         $yaml = Yaml::dump($document, self::YAML_INLINE_LEVEL);
-        dd($document, $yaml);
+
+        dd($yaml);
 
         return $yaml;
     }
@@ -45,17 +46,6 @@ class OpenAPIWriter
             'paths'       => [],
             'definitions' => [],
         ];
-    }
-
-    private function hydrateSkeleton(array $skeleton)
-    {
-        $tags = $this->getTags();
-        $paths = $this->hydratePaths($this->getPaths());
-
-        $skeleton['tags'] = $tags;
-        $skeleton['paths'] = $paths;
-
-        return $skeleton;
     }
 
     private function getBasePath()
@@ -96,13 +86,6 @@ class OpenAPIWriter
         })->unique();
     }
 
-    private function hydratePaths(Collection $paths)
-    {
-        return $paths->reduce(function ($hydrated, $path) {
-            return $hydrated->put($path, $this->getPathMethods($path));
-        }, new Collection())->toArray();
-    }
-
     private function getPathMethods(String $path)
     {
         return $this->routes->filter(function ($route) use ($path) {
@@ -112,5 +95,60 @@ class OpenAPIWriter
         })->reduce(function ($methods, $method) {
             return $methods->put($method, $this->getBasePath());
         }, new Collection());
+    }
+
+    private function hydrateSkeleton(array $skeleton)
+    {
+        $skeleton['tags'] = $this->getTags();
+        $skeleton['paths'] = $this->hydratePaths($this->getPaths());
+        $skeleton['definitions'] = $this->hydrateDefinitions();
+
+        return $skeleton;
+    }
+
+    private function hydratePaths(Collection $paths)
+    {
+        return $paths->reduce(function ($hydrated, $path) {
+            return $hydrated->put($path, $this->getPathMethods($path));
+        }, new Collection())->toArray();
+    }
+
+    private function hydrateDefinitions()
+    {
+        return $this->routes->map(function ($route) {
+            return [
+                'data' => $route['response'][0],
+                'uri'  => $route['uri'],
+            ];
+        })->filter(function ($response) {
+            return (bool) $response['data']['content'];
+        })->reduce(function ($definitions, $definition) {
+            return $definitions->put($this->generateDefinitionName($definition), [
+                'type' => 'object',
+                'properties' => $this->getDefinitionProperties($definition),
+            ]);
+        }, new Collection())->toArray();
+    }
+
+    private function generateDefinitionName($definition)
+    {
+        return str_replace('/', '', ucwords($definition['uri'], '/')) . $definition['data']['status'];
+    }
+
+    private function getDefinitionProperties($definition)
+    {
+        $properties = json_decode($definition['data']['content'], true);
+
+        return $this->hydrateDefinition(collect($properties));
+    }
+
+    private function hydrateDefinition(Collection $properties)
+    {
+        return $properties->map(function ($property) {
+            return [
+                'type' => gettype($property),
+                'example' => $property,
+            ];
+        })->toArray();
     }
 }
